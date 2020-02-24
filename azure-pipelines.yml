@@ -18,145 +18,145 @@ trigger:
       - "*"
 
 stages:
-  - stage: "sdist"
-    jobs:
-      - job: linux_sdist
-        pool: { vmImage: "Ubuntu-16.04" }
-        steps:
-          - task: UsePythonVersion@0
-          - bash: |
-              mkdir qpdf && wget -q $QPDF_RELEASE -O - | tar xz -C qpdf --strip-components=1
-              cd qpdf/
-              ./configure
-              make -j 2
-              sudo make install
-              cd ..
-            displayName: "Build QPDF"
-          - bash: |
-              python -m pip install --upgrade pip
-              python setup.py sdist
-              python -m pip install pybind11
-              python -m pip install --verbose dist/*.tar.gz
-              python -m pip install -r requirements/test.txt
-              python -m pip install pytest-cov
-            displayName: "Build sdist"
-          - bash: |
-              export LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH"
-              python -m pytest -nauto --junitxml=test-sdist.xml --cov=pikepdf --cov-report=xml
-            displayName: "Test"
-          - task: PublishTestResults@2
-            inputs:
-              testResultsFiles: "test-sdist.xml"
-              testRunTitle: "$(Agent.OS) - $(Build.DefinitionName) - Python $(python.version)"
-            condition: succeededOrFailed()
-          - task: PublishCodeCoverageResults@1
-            inputs:
-              codeCoverageTool: Cobertura
-              summaryFileLocation: "$(System.DefaultWorkingDirectory)/**/coverage.xml"
-          - publish: dist
-            artifact: sdist
+  # - stage: "sdist"
+  #   jobs:
+  #     - job: linux_sdist
+  #       pool: { vmImage: "Ubuntu-16.04" }
+  #       steps:
+  #         - task: UsePythonVersion@0
+  #         - bash: |
+  #             mkdir qpdf && wget -q $QPDF_RELEASE -O - | tar xz -C qpdf --strip-components=1
+  #             cd qpdf/
+  #             ./configure
+  #             make -j 2
+  #             sudo make install
+  #             cd ..
+  #           displayName: "Build QPDF"
+  #         - bash: |
+  #             python -m pip install --upgrade pip
+  #             python setup.py sdist
+  #             python -m pip install pybind11
+  #             python -m pip install --verbose dist/*.tar.gz
+  #             python -m pip install -r requirements/test.txt
+  #             python -m pip install pytest-cov
+  #           displayName: "Build sdist"
+  #         - bash: |
+  #             export LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH"
+  #             python -m pytest -nauto --junitxml=test-sdist.xml --cov=pikepdf --cov-report=xml
+  #           displayName: "Test"
+  #         - task: PublishTestResults@2
+  #           inputs:
+  #             testResultsFiles: "test-sdist.xml"
+  #             testRunTitle: "$(Agent.OS) - $(Build.DefinitionName) - Python $(python.version)"
+  #           condition: succeededOrFailed()
+  #         - task: PublishCodeCoverageResults@1
+  #           inputs:
+  #             codeCoverageTool: Cobertura
+  #             summaryFileLocation: "$(System.DefaultWorkingDirectory)/**/coverage.xml"
+  #         - publish: dist
+  #           artifact: sdist
   - stage: "Wheels"
     jobs:
-      - job: linux64
-        pool: { vmImage: "Ubuntu-16.04" }
-        variables:
-          cibw_environment: >-
-            LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
-            CXXFLAGS="-I/usr/local/include"
-            LDFLAGS="-L/usr/local/lib"
-          cibw_build: "*-manylinux_x86_64"
-          cibw_test_command: "pytest -nauto --junitxml=/host/$(System.DefaultWorkingDirectory)/test.xml {project}/tests"
-          cibw_before_build:
-            >- # yaml: folded newlines to spaces, no newline at end
-            [ ! -f /usr/local/lib/libz.a ] &&
-            cd zlib &&
-            ./configure &&
-            make -j install &&
-            cd .. ;
-            [ ! -f /usr/local/lib/libjpeg.a ] &&
-            cd jpeg &&
-            ./configure &&
-            make -j install &&
-            cd .. ;
-            [ ! -f /usr/local/lib/libqpdf.a ] &&
-            cd qpdf &&
-            ./autogen.sh &&
-            ./configure &&
-            make -j install &&
-            cd .. ;
-            pip install pybind11
-        steps:
-          - task: UsePythonVersion@0
-          - bash: |
-              mkdir zlib && wget -q $ZLIB_RELEASE -O - | tar xz -C zlib --strip-components=1
-              mkdir jpeg && wget -q $JPEG_RELEASE -O - | tar xz -C jpeg --strip-components=1
-              mkdir qpdf && wget -q $QPDF_RELEASE -O - | tar xz -C qpdf --strip-components=1
-            displayName: "Download QPDF and components"
-          - bash: source azure-pipelines/build.bash
-            displayName: "cibuildwheel"
-          - task: PublishTestResults@2
-            inputs:
-              testResultsFiles: "test.xml"
-              testRunTitle: "$(Agent.OS) - $(Build.DefinitionName) - Python $(python.version)"
-            condition: succeededOrFailed()
-          - publish: wheelhouse
-            artifact: linux64
-      - job: linux32
-        pool: { vmImage: "Ubuntu-16.04" }
-        variables:
-          cibw_environment: >-
-            LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
-            CXXFLAGS="-I/usr/local/include"
-            LDFLAGS="-L/usr/local/lib"
-          cibw_build: "*-manylinux_i686"
-          cibw_test_command: "pytest -nauto --junitxml=/host/$(System.DefaultWorkingDirectory)/test.xml {project}/tests"
-          cibw_before_build:
-            >- # yaml: folded newlines to spaces, no newline at end
-            [ ! -f /usr/local/lib/libz.a ] &&
-            cd zlib &&
-            ./configure &&
-            make -j install &&
-            cd .. ;
-            [ ! -f /usr/local/lib/libjpeg.a ] &&
-            cd jpeg &&
-            ./configure &&
-            make -j install &&
-            cd .. ;
-            [ ! -f /usr/local/lib/libqpdf.a ] &&
-            cd qpdf &&
-            ./autogen.sh &&
-            ./configure &&
-            make -j install &&
-            cd .. ;
-            pip install pybind11
-        steps:
-          - task: UsePythonVersion@0
-          - bash: |
-              mkdir zlib && wget -q $ZLIB_RELEASE -O - | tar xz -C zlib --strip-components=1
-              mkdir jpeg && wget -q $JPEG_RELEASE -O - | tar xz -C jpeg --strip-components=1
-              mkdir qpdf && wget -q $QPDF_RELEASE -O - | tar xz -C qpdf --strip-components=1
-            displayName: "Download QPDF and components"
-          - bash: source azure-pipelines/build.bash
-            displayName: "cibuildwheel"
-          - task: PublishTestResults@2
-            inputs:
-              testResultsFiles: "test.xml"
-              testRunTitle: "$(Agent.OS) - $(Build.DefinitionName) - Python $(python.version)"
-            condition: succeededOrFailed()
-          - publish: wheelhouse
-            artifact: linux32
-      - job: macos
-        pool: { vmImage: "macOS-10.13" }
-        variables:
-          cibw_before_build: >-
-            pip install pybind11 &&
-            brew install qpdf
-        steps:
-          - task: UsePythonVersion@0
-          - bash: source azure-pipelines/build.bash
-            displayName: cibuildwheel
-          - publish: wheelhouse
-            artifact: macos
+      # - job: linux64
+      #   pool: { vmImage: "Ubuntu-16.04" }
+      #   variables:
+      #     cibw_environment: >-
+      #       LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+      #       CXXFLAGS="-I/usr/local/include"
+      #       LDFLAGS="-L/usr/local/lib"
+      #     cibw_build: "*-manylinux_x86_64"
+      #     cibw_test_command: "pytest -nauto --junitxml=/host/$(System.DefaultWorkingDirectory)/test.xml {project}/tests"
+      #     cibw_before_build:
+      #       >- # yaml: folded newlines to spaces, no newline at end
+      #       [ ! -f /usr/local/lib/libz.a ] &&
+      #       cd zlib &&
+      #       ./configure &&
+      #       make -j install &&
+      #       cd .. ;
+      #       [ ! -f /usr/local/lib/libjpeg.a ] &&
+      #       cd jpeg &&
+      #       ./configure &&
+      #       make -j install &&
+      #       cd .. ;
+      #       [ ! -f /usr/local/lib/libqpdf.a ] &&
+      #       cd qpdf &&
+      #       ./autogen.sh &&
+      #       ./configure &&
+      #       make -j install &&
+      #       cd .. ;
+      #       pip install pybind11
+      #   steps:
+      #     - task: UsePythonVersion@0
+      #     - bash: |
+      #         mkdir zlib && wget -q $ZLIB_RELEASE -O - | tar xz -C zlib --strip-components=1
+      #         mkdir jpeg && wget -q $JPEG_RELEASE -O - | tar xz -C jpeg --strip-components=1
+      #         mkdir qpdf && wget -q $QPDF_RELEASE -O - | tar xz -C qpdf --strip-components=1
+      #       displayName: "Download QPDF and components"
+      #     - bash: source azure-pipelines/build.bash
+      #       displayName: "cibuildwheel"
+      #     - task: PublishTestResults@2
+      #       inputs:
+      #         testResultsFiles: "test.xml"
+      #         testRunTitle: "$(Agent.OS) - $(Build.DefinitionName) - Python $(python.version)"
+      #       condition: succeededOrFailed()
+      #     - publish: wheelhouse
+      #       artifact: linux64
+      # - job: linux32
+      #   pool: { vmImage: "Ubuntu-16.04" }
+      #   variables:
+      #     cibw_environment: >-
+      #       LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+      #       CXXFLAGS="-I/usr/local/include"
+      #       LDFLAGS="-L/usr/local/lib"
+      #     cibw_build: "*-manylinux_i686"
+      #     cibw_test_command: "pytest -nauto --junitxml=/host/$(System.DefaultWorkingDirectory)/test.xml {project}/tests"
+      #     cibw_before_build:
+      #       >- # yaml: folded newlines to spaces, no newline at end
+      #       [ ! -f /usr/local/lib/libz.a ] &&
+      #       cd zlib &&
+      #       ./configure &&
+      #       make -j install &&
+      #       cd .. ;
+      #       [ ! -f /usr/local/lib/libjpeg.a ] &&
+      #       cd jpeg &&
+      #       ./configure &&
+      #       make -j install &&
+      #       cd .. ;
+      #       [ ! -f /usr/local/lib/libqpdf.a ] &&
+      #       cd qpdf &&
+      #       ./autogen.sh &&
+      #       ./configure &&
+      #       make -j install &&
+      #       cd .. ;
+      #       pip install pybind11
+      #   steps:
+      #     - task: UsePythonVersion@0
+      #     - bash: |
+      #         mkdir zlib && wget -q $ZLIB_RELEASE -O - | tar xz -C zlib --strip-components=1
+      #         mkdir jpeg && wget -q $JPEG_RELEASE -O - | tar xz -C jpeg --strip-components=1
+      #         mkdir qpdf && wget -q $QPDF_RELEASE -O - | tar xz -C qpdf --strip-components=1
+      #       displayName: "Download QPDF and components"
+      #     - bash: source azure-pipelines/build.bash
+      #       displayName: "cibuildwheel"
+      #     - task: PublishTestResults@2
+      #       inputs:
+      #         testResultsFiles: "test.xml"
+      #         testRunTitle: "$(Agent.OS) - $(Build.DefinitionName) - Python $(python.version)"
+      #       condition: succeededOrFailed()
+      #     - publish: wheelhouse
+      #       artifact: linux32
+      # - job: macos
+      #   pool: { vmImage: "macOS-10.13" }
+      #   variables:
+      #     cibw_before_build: >-
+      #       pip install pybind11 &&
+      #       brew install qpdf
+      #   steps:
+      #     - task: UsePythonVersion@0
+      #     - bash: source azure-pipelines/build.bash
+      #       displayName: cibuildwheel
+      #     - publish: wheelhouse
+      #       artifact: macos
       - job: windows64
         pool: { vmImage: "vs2017-win2016" }
         variables:
@@ -170,27 +170,30 @@ stages:
           - task: UsePythonVersion@0
           - powershell: azure-pipelines/win-download-qpdf.ps1
             displayName: "Download QPDF"
+          - powershell: |
+              Set-Itemproperty -path 'HKLM:\SOFTWARE\Microsoft\Cryptography\Protect\Providers\df9d8cd0-1501-11d1-8c7a-00c04fc297eb' -name 'ProtectionPolicy' -value 1
+            displayName: "Fix crypto error"
           - bash: source azure-pipelines/build.bash
             displayName: "cibuildwheel"
           - publish: wheelhouse
             artifact: win64
-      - job: windows32
-        pool: { vmImage: "vs2017-win2016" }
-        variables:
-          qpdf_windows: ${{ format('https://github.com/qpdf/qpdf/releases/download/release-qpdf-{0}/qpdf-{0}-bin-msvc32.zip', variables.qpdf_version) }}
-          cibw_build: "*-win32"
-          cibw_environment: >-
-            INCLUDE="$INCLUDE;c:\\qpdf\\include"
-            LIB="$LIB;c:\\qpdf\\lib"
-            LIBPATH="$LIBPATH;c:\\qpdf\\lib"
-        steps:
-          - task: UsePythonVersion@0
-          - powershell: azure-pipelines/win-download-qpdf.ps1
-            displayName: "Download QPDF"
-          - bash: source azure-pipelines/build.bash
-            displayName: "cibuildwheel"
-          - publish: wheelhouse
-            artifact: win32
+      # - job: windows32
+      #   pool: { vmImage: "vs2017-win2016" }
+      #   variables:
+      #     qpdf_windows: ${{ format('https://github.com/qpdf/qpdf/releases/download/release-qpdf-{0}/qpdf-{0}-bin-msvc32.zip', variables.qpdf_version) }}
+      #     cibw_build: "*-win32"
+      #     cibw_environment: >-
+      #       INCLUDE="$INCLUDE;c:\\qpdf\\include"
+      #       LIB="$LIB;c:\\qpdf\\lib"
+      #       LIBPATH="$LIBPATH;c:\\qpdf\\lib"
+      #   steps:
+      #     - task: UsePythonVersion@0
+      #     - powershell: azure-pipelines/win-download-qpdf.ps1
+      #       displayName: "Download QPDF"
+      #     - bash: source azure-pipelines/build.bash
+      #       displayName: "cibuildwheel"
+      #     - publish: wheelhouse
+      #       artifact: win32
 
   - stage: "Deploy"
     jobs:
