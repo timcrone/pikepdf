@@ -575,6 +575,12 @@ void init_qpdf(py::module &m)
             ``.open_metadata()`` API instead, which will edit the modern (and
             unfortunately, more complicated) XMP metadata object and synchronize
             changes to the document information dictionary.
+
+            This property simplifies access to the actual document information
+            dictionary and ensures that it is created correctly if it needs
+            to be created. A new dictionary will be created if this property
+            is accessed and dictionary does not exist. To delete the dictionary
+            use ``del pdf.trailer.Info``.
             )~~~"
         )
         .def_property_readonly("trailer", &QPDF::getTrailer,
@@ -709,12 +715,13 @@ void init_qpdf(py::module &m)
                     potentially creating an invalid file that does not display
                     in old versions. See QPDF manual for details. If a tuple, the
                     second element is an integer, the extension level.
-                fix_metadata_version (bool): If True (default) and the XMP metadata
+                fix_metadata_version (bool): If ``True`` (default) and the XMP metadata
                     contains the optional PDF version field, ensure the version in
                     metadata is correct. If the XMP metadata does not contain a PDF
                     version field, none will be added. To ensure that the field is
                     added, edit the metadata and insert a placeholder value in
-                    ``pdf:PDFVersion``.
+                    ``pdf:PDFVersion``. If XMP metadata does not exist, it will
+                    not be created regardless of the value of this argument.
 
                 object_stream_mode (pikepdf.ObjectStreamMode):
                     ``disable`` prevents the use of object streams.

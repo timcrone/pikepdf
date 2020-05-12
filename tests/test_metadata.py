@@ -1,7 +1,5 @@
 import os
-import platform
 import re
-import sys
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -19,14 +17,12 @@ from pikepdf.models.metadata import (
     XMP_NS_PDF,
     XMP_NS_XMP,
     DateConverter,
-    PdfMetadata,
     decode_pdf_date,
-    encode_pdf_date,
 )
 
 try:
     from libxmp import XMPMeta, XMPError
-except Exception:
+except Exception:  # throws libxmp.ExempiLoadError pylint: disable=broad-except
     XMPMeta, XMPError = None, None
 
 needs_libxmp = pytest.mark.skipif(
@@ -549,3 +545,25 @@ def test_set_empty_string(graph):
     generated_xmp = graph.Root.Metadata.read_bytes()
     print(generated_xmp)
     assert generated_xmp.count(b'<dc:title>') == 1
+
+
+@pytest.mark.parametrize('fix_metadata', [True, False])
+def test_dont_create_empty_xmp(trivial, outpdf, fix_metadata):
+    trivial.save(outpdf, fix_metadata_version=fix_metadata)
+
+    with pikepdf.open(outpdf) as p:
+        assert Name.Metadata not in p.Root
+
+
+@pytest.mark.parametrize('fix_metadata', [True, False])
+def test_dont_create_empty_docinfo(trivial, outpdf, fix_metadata):
+    del trivial.trailer.Info
+    trivial.save(outpdf, fix_metadata_version=fix_metadata)
+
+    with pikepdf.open(outpdf) as p:
+        assert Name.Info not in p.trailer
+
+
+def test_issue_100(trivial):
+    with trivial.open_metadata() as m:
+        m.load_from_docinfo({'/AAPL:Example': pikepdf.Array([42])})

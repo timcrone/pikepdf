@@ -3,12 +3,11 @@ Testing focused on pikepdf.Pdf
 """
 
 import locale
-import os
 import shutil
 import sys
 from io import BytesIO, StringIO
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 
@@ -37,7 +36,7 @@ def test_non_filename():
 def test_file_descriptor(resources):
     with (resources / 'pal-1bit-trivial.pdf').open('rb') as f:
         with pytest.raises(TypeError):
-            pdf = Pdf.open(f.fileno())
+            Pdf.open(f.fileno())
 
 
 def test_save_to_file_descriptor_fails(trivial):
@@ -117,8 +116,6 @@ class TestStreams:
                 Pdf.open(stream)
 
     def test_save_stream(self, trivial, outdir):
-        from io import BytesIO
-
         pdf = trivial
         pdf.save(outdir / 'nostream.pdf', static_id=True)
 

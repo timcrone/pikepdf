@@ -32,10 +32,15 @@ ObjectType.__module__ = __name__
 
 
 # type(Object) is the metaclass that pybind11 defines; we wish to extend that
+# pylint cannot see the C++ metaclass definition is thoroughly confused.
+# pylint: disable=invalid-metaclass
+
+
 class _ObjectMeta(type(Object)):
     """Supports instance checking"""
 
-    def __instancecheck__(cls, instance):
+    # The instance being checked in a metaclass is a class
+    def __instancecheck__(cls, instance):  # pylint: disable=no-self-argument
         if type(instance) != Object:
             return False
         return cls.object_type == instance._type_code
@@ -60,10 +65,10 @@ class _NameObjectMeta(_ObjectMeta):
         raise TypeError(
             (
                 "pikepdf.Name is not subscriptable. You probably meant:\n"
-                "    pikepdf.Name.{}\n"
+                "    pikepdf.Name.{item}\n"
                 "or\n"
-                "    pikepdf.Name('/{}')\n"
-            ).format(item, item)
+                "    pikepdf.Name('/{item}')\n"
+            ).format(item=item)
         )
 
 

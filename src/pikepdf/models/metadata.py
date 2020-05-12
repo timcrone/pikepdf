@@ -17,7 +17,7 @@ from warnings import warn
 from lxml import etree
 from lxml.etree import QName, XMLParser, XMLSyntaxError, parse
 
-from .. import Name, PdfError, Stream, String
+from .. import Name, Stream, String
 from .. import __version__ as pikepdf_version
 
 XMP_NS_DC = "http://purl.org/dc/elements/1.1/"
@@ -96,7 +96,7 @@ LANG_ALTS = frozenset(
 # These are the illegal characters in XML 1.0. (XML 1.1 is a bit more permissive,
 # but we'll be strict to ensure wider compatibility.)
 re_xml_illegal_chars = re.compile(
-    r"(?u)[^\x09\x0A\x0D\x20-\uD7FF\uE000-\uFFFD\u10000-\u10FFFF]"
+    r"(?u)[^\x09\x0A\x0D\x20-\U0000D7FF\U0000E000-\U0000FFFD\U00010000-\U0010FFFF]"
 )
 re_xml_illegal_bytes = re.compile(
     br"[^\x09\x0A\x0D\x20-\xFF]|&#0;"
@@ -314,7 +314,7 @@ class PdfMetadata(MutableMapping):
             msg = (
                 "The metadata field {} with value '{}' has no XMP equivalent, "
                 "so it was discarded"
-            ).format(extra, docinfo.get(extra))
+            ).format(extra, repr(docinfo.get(extra)))
             if raise_failure:
                 raise ValueError(msg)
             else:
@@ -341,7 +341,7 @@ class PdfMetadata(MutableMapping):
             parser = XMLParser(recover=True)
             return parse(BytesIO(xml), parser)
 
-        def replace_with_empty_xmp(xml=None):
+        def replace_with_empty_xmp(_xml=None):
             log.warning("Error occurred parsing XMP, replacing with empty XMP.")
             return basic_parser(XMP_EMPTY)
 
@@ -396,7 +396,8 @@ class PdfMetadata(MutableMapping):
         The standard mapping is described here:
             https://www.pdfa.org/pdfa-metadata-xmp-rdf-dublin-core/
         """
-        self._pdf.docinfo  # Touch object to ensure it exists
+        # Touch object to ensure it exists
+        self._pdf.docinfo  # pylint: disable=pointless-statement
         for uri, element, docinfo_name, converter in self.DOCINFO_MAPPING:
             qname = QName(uri, element)
             try:
@@ -635,7 +636,7 @@ class PdfMetadata(MutableMapping):
                 node = etree.SubElement(rdfdesc, self._qname(key))
                 add_array(node, val)
             elif isinstance(val, str):
-                rdfdesc = etree.SubElement(
+                _rdfdesc = etree.SubElement(
                     rdf,
                     QName(XMP_NS_RDF, 'Description'),
                     attrib={

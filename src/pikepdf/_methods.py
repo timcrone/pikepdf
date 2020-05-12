@@ -13,7 +13,6 @@ We can also move the implementation to C++ if desired.
 """
 
 import inspect
-from collections import namedtuple
 from collections.abc import KeysView
 from io import BytesIO
 from subprocess import PIPE, run
@@ -100,7 +99,10 @@ def _mudraw(buffer, fmt):
         tmp_in.flush()
 
         proc = run(
-            ['mudraw', '-F', fmt, '-o', '-', tmp_in.name], stdout=PIPE, stderr=PIPE
+            ['mudraw', '-F', fmt, '-o', '-', tmp_in.name],
+            stdout=PIPE,
+            stderr=PIPE,
+            check=True,
         )
         if proc.stderr:
             raise RuntimeError(proc.stderr.decode())
@@ -161,7 +163,9 @@ class Extend_Object:
         for k in del_keys:
             del self[k]  # pylint: disable=unsupported-delete-operation
 
-    def write(self, data, *, filter=None, decode_parms=None, type_check=True):
+    def write(
+        self, data, *, filter=None, decode_parms=None, type_check=True
+    ):  # pylint: disable=redefined-builtin
         """
         Replace stream object's data with new (possibly compressed) `data`.
 
@@ -599,7 +603,7 @@ class Extend_Page:
     def __repr__(self):
         return repr(self.obj).replace('Dictionary', 'Page')
 
-    def _repr_mimebundle_(self, include, exclude, **kwargs):
+    def _repr_mimebundle_(self, include, exclude, **_kwargs):
         data = {}
         bundle = {'application/pdf', 'image/png'}
         if include:

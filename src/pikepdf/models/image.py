@@ -11,7 +11,6 @@ from io import BytesIO
 from itertools import zip_longest
 from pathlib import Path
 from shutil import copyfileobj
-from tempfile import NamedTemporaryFile
 from zlib import decompress
 from zlib import error as ZlibError
 
@@ -222,13 +221,12 @@ class PdfImageBase(ABC):
 
         if not self.indexed:
             return None
-        _idx, base, hival, lookup = None, None, None, None
         try:
-            _idx, base, hival, lookup = self._colorspaces
+            _idx, base, _hival, lookup = self._colorspaces
         except ValueError as e:
             raise ValueError('Not sure how to interpret this palette') from e
         base = str(base)
-        hival = int(hival)
+        _hival = int(_hival)
         lookup = bytes(lookup)
         if not base in self.SIMPLE_COLORSPACES:
             raise NotImplementedError("not sure how to interpret this palette")
