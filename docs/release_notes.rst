@@ -18,6 +18,26 @@ is in production use. Note that the C++ extension module
 ``pikepdf._qpdf`` is a private interface within pikepdf that applications
 should not access directly, along with any modules with a prefixed underscore.
 
+v1.13.0
+=======
+
+-  Added support for editing PDF Outlines (also known as bookmarks or the table of
+   contents). Many thanks to Matthias Erll for this contribution.
+-  Added support for decoding run length encoded images.
+-  ``Object.read_bytes()`` and ``Object.get_stream_buffer()`` can now request decoding
+   of uncommon PDF filters.
+-  Fixed test suite warnings related to pytest and hypothesis.
+-  Fixed build on Cygwin. Thanks to @jhgarrison for report and testing.
+
+v1.12.0
+=======
+
+-  Microsoft Visual C++ Runtime libraries are now included in the pikepdf Windows
+   wheel, to improve ease of use on Windows.
+-  Defensive code added to prevent using ``.emplace()`` on objects from a
+   foreign PDF without first copying the object. Previously, this would raise
+   an exception when the file was saved.
+
 v1.11.2
 =======
 
